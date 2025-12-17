@@ -21,17 +21,17 @@ The fastest and safest way to run Chimera is using Docker. This isolates the pro
 
 ```bash
 # Start the entire stack (Server + Client) in background
-docker-compose up -d --build
+docker compose up -d --build
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Stop & Clean Up
 
 ```bash
 # Stop containers
-docker-compose down
+docker compose down
 ```
 
 ## 🌍 Real-World Deployment (Linux Server + Mac Client)
@@ -40,7 +40,7 @@ docker-compose down
 Clone the repo and start **only the server**:
 ```bash
 # git clone ... && cd chimera_protocol
-docker-compose up -d --build server
+docker compose up -d --build server
 ```
 This starts the Chimera Server on port `8080`. Ensure your firewall allows inbound traffic on TCP/8080.
 
@@ -57,7 +57,7 @@ cargo run -p chimera_core --bin client
 **Option B: Docker**
 ```bash
 # Run a one-off client container
-docker-compose run -e SERVER_HOST=x.x.x.x --rm client
+docker compose run -e SERVER_HOST=x.x.x.x --rm client
 ```
 
 ## 🛠 Manual Installation (Rust)

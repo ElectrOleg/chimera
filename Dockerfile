@@ -32,7 +32,7 @@ COPY chimera_crypto/src chimera_crypto/src
 COPY chimera_ai/src chimera_ai/src
 
 # Touch main files to force rebuild of source
-RUN touch chimera_core/src/lib.rs
+RUN touch chimera_core/src/lib.rs chimera_transport/src/lib.rs chimera_crypto/src/lib.rs chimera_ai/src/lib.rs
 
 # Build the release binaries
 RUN cargo build --release
