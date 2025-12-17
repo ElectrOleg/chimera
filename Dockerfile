@@ -25,6 +25,9 @@ COPY chimera_ai/Cargo.toml chimera_ai/
 # Build dependencies only (cached if Cargo.toml/lock unchanged)
 RUN cargo build --release
 
+# Force cache invalidation for source copy
+ARG CACHEBUST=1
+
 # Copy actual source code
 COPY chimera_core/src chimera_core/src
 COPY chimera_transport/src chimera_transport/src
