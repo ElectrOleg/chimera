@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      target: server
+    container_name: chimera_server
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - chimera_net
+    cap_add:
+      - NET_ADMIN # Required for low-level network manipulation if we add Tun/Tap later
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  client:
+    build:
+      context: .
+      target: client
+    container_name: chimera_client
+    depends_on:
+      - server
+    networks:
+      - chimera_net
+    environment:
+      # In Docker network, server is reachable by service name "server"
+      - SERVER_HOST=server
+      - RUST_LOG=info
+    # Client runs one test session and exits. 
+    # To keep it running, we could use a different command or 'restart: always'
+    # For now, it runs once to demonstrate connectivity.
+
+networks:
+  chimera_net:
+    driver: bridge

@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "chimera_core",
+    "chimera_transport",
+    "chimera_crypto",
+    "chimera_ai",
+]
+resolver = "2"

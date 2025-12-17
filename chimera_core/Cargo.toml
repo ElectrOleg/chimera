@@ -1,0 +1,16 @@
+[package]
+name = "chimera_core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chimera_transport = { path = "../chimera_transport" }
+chimera_crypto = { path = "../chimera_crypto" }
+chimera_ai = { path = "../chimera_ai" }
+tokio = { version = "1", features = ["full", "signal"] }
+anyhow = "1.0"
+bytes = "1"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+base64 = "0.21"
