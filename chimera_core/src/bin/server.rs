@@ -20,7 +20,8 @@ async fn main() -> Result<()> {
     node.add_transport(Box::new(TcpTransport));
 
     // Bind address
-    let addr: SocketAddr = "127.0.0.1:8080".parse()?;
+    let bind_addr = std::env::var("SERVER_BIND").unwrap_or_else(|_| "0.0.0.0:8080".to_string());
+    let addr: SocketAddr = bind_addr.parse()?;
 
     // Create a shutdown signal
     let shutdown_signal = async {
