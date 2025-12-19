@@ -96,6 +96,7 @@ dependencies = [
  "chimera_ai",
  "chimera_crypto",
  "chimera_transport",
+ "rand",
  "tokio",
  "tracing",
  "tracing-subscriber",

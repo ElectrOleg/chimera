@@ -99,12 +99,57 @@ impl ChimeraNode {
 
 pub mod handshake;
 pub mod mimic;
+pub mod handshake;
+pub mod mimic;
+pub mod protocol;
+pub mod socks;
+pub mod server_proxy;
+pub mod client_proxy;
+
+use crate::server_proxy::ServerProxy;
+use crate::protocol::Frame;
+use tokio::sync::mpsc;
+use bytes::BytesMut;
+use tokio::io::AsyncReadExt;
 
 async fn handle_connection(conn: &mut dyn Connection) -> Result<()> {
-    // Simple echo for now
-    while let Some(data) = conn.recv().await? {
-        // info!("Received {} bytes", data.len());
-        conn.send(data).await?;
+    let (tx, mut rx) = mpsc::channel::<Frame>(100);
+    let proxy = Arc::new(ServerProxy::new(tx));
+    
+    let mut buf = BytesMut::with_capacity(4096);
+    
+    loop {
+        tokio::select! {
+             // 1. Read from Tunnel
+            res = conn.recv() => {
+                match res? {
+                    Some(data) => {
+                        buf.extend_from_slice(&data);
+                        // Parse Frames
+                        loop {
+                            let mut cursor = std::io::Cursor::new(&buf[..]);
+                            match Frame::check(&mut cursor)? {
+                                Some(len) => {
+                                    let mut frame_bytes = buf.split_to(len).freeze();
+                                    let mut frame_bytes_cursor = frame_bytes.clone(); // convert to bytes for parsing
+                                    let frame = Frame::parse(&mut frame_bytes)?;
+                                    proxy.handle_frame(frame).await?;
+                                }
+                                None => break, // Need more data
+                            }
+                        }
+                    }
+                    None => break, // EOF
+                }
+            }
+            
+             // 2. Write to Tunnel (from Proxy)
+            Some(frame) = rx.recv() => {
+                let bytes = frame.to_bytes();
+                conn.send(bytes).await?;
+            }
+        }
     }
+    
     Ok(())
 }
