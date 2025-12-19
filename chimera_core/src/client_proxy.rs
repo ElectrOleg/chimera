@@ -29,9 +29,13 @@ impl ClientProxy {
     pub async fn handle_frame(&self, frame: Frame) -> Result<()> {
         match frame.frame_type {
             FrameType::Data => {
-                let map = self.streams.lock().await;
-                if let Some(tx) = map.get(&frame.stream_id) {
-                    let _ = tx.send(frame.payload).await;
+                let tx = {
+                    let map = self.streams.lock().await;
+                    map.get(&frame.stream_id).cloned()
+                };
+                
+                if let Some(tx) = tx {
+                     let _ = tx.send(frame.payload).await;
                 }
             }
             FrameType::Disconnect => {
@@ -75,7 +79,8 @@ impl ClientProxy {
 
             // Socket -> Tunnel
             let to_tunnel = async {
-                let mut buf = [0u8; 4096];
+                // Reduced buffer size to 1400 to avoid MTU fragmentation with headers
+                let mut buf = [0u8; 1400];
                 loop {
                     match rd.read(&mut buf).await {
                         Ok(0) => break,
