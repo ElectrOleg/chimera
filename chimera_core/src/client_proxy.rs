@@ -83,37 +83,10 @@ impl ClientProxy {
                             let data = Bytes::copy_from_slice(&buf[0..n]);
                             
                             // Traffic Obfuscation:
-                            // If packet is small, inject random padding to mask its size.
-                            // This defeats naive DPI analysis based on packet sizes (e.g. TLS Hello size).
+                            // DISABLED for performance testing
+                            // if n < 500 && rng.gen_bool(0.5) ... 
+                            // ...
                             
-                            let mut inject_padding = false;
-                            let mut padding_len = 0;
-                            
-                            {
-                                let mut rng = rand::thread_rng();
-                                use rand::Rng; 
-                                if n < 500 && rng.gen_bool(0.5) {
-                                    inject_padding = true;
-                                    padding_len = rng.gen_range(10..200);
-                                }
-                            } // rng is dropped here
-
-                            if inject_padding {
-                                let mut padding = vec![0u8; padding_len];
-                                 // Re-create RNG for filling or just fill 0s? 
-                                 // Ideally we want random. Creating thread_rng is cheap.
-                                {
-                                    let mut rng = rand::thread_rng();
-                                    use rand::Rng;
-                                    rng.fill(&mut padding[..]);
-                                }
-                                
-                                let pad_frame = Frame::new(FrameType::Padding, stream_id, Bytes::from(padding));
-                                if tunnel_tx.send(pad_frame).await.is_err() {
-                                    break;
-                                }
-                            }
-
                             let frame = Frame::new(FrameType::Data, stream_id, data);
                             if tunnel_tx.send(frame).await.is_err() {
                                 break;
