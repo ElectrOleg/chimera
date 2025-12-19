@@ -99,18 +99,15 @@ impl ChimeraNode {
 
 pub mod handshake;
 pub mod mimic;
-pub mod handshake;
-pub mod mimic;
 pub mod protocol;
 pub mod socks;
 pub mod server_proxy;
 pub mod client_proxy;
+pub mod system;
 
 use crate::server_proxy::ServerProxy;
 use crate::protocol::Frame;
-use tokio::sync::mpsc;
 use bytes::BytesMut;
-use tokio::io::AsyncReadExt;
 
 async fn handle_connection(conn: &mut dyn Connection) -> Result<()> {
     let (tx, mut rx) = mpsc::channel::<Frame>(100);
@@ -130,9 +127,9 @@ async fn handle_connection(conn: &mut dyn Connection) -> Result<()> {
                             let mut cursor = std::io::Cursor::new(&buf[..]);
                             match Frame::check(&mut cursor)? {
                                 Some(len) => {
-                                    let mut frame_bytes = buf.split_to(len).freeze();
-                                    let mut frame_bytes_cursor = frame_bytes.clone(); // convert to bytes for parsing
-                                    let frame = Frame::parse(&mut frame_bytes)?;
+                                    let frame_bytes = buf.split_to(len).freeze();
+                                    // Removed unnecessary clone/cursor
+                                    let frame = Frame::parse(&mut bytes::Bytes::from(frame_bytes))?;
                                     proxy.handle_frame(frame).await?;
                                 }
                                 None => break, // Need more data
