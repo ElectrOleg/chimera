@@ -66,7 +66,8 @@ impl ClientProxy {
         }
 
         // 2. Setup Bridge
-        let (tx, mut rx) = mpsc::channel::<Bytes>(100);
+        // Increased buffer to 10000 to prevent HOL blocking of the main tunnel loop
+        let (tx, mut rx) = mpsc::channel::<Bytes>(10000);
         {
             let mut map = self.streams.lock().await;
             map.insert(stream_id, tx);

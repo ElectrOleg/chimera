@@ -40,7 +40,8 @@ impl ServerProxy {
                             info!("Connected to {}", target);
                             
                             // Split stream handling
-                            let (tx, mut rx) = mpsc::channel::<Bytes>(100);
+                            // Increased buffer to 10000 to prevent HOL blocking
+                            let (tx, mut rx) = mpsc::channel::<Bytes>(10000);
                             
                             {
                                 let mut map = streams.lock().await;
@@ -51,7 +52,8 @@ impl ServerProxy {
                             
                             // Remote -> Tunnel Loop
                             let to_tunnel = async {
-                                let mut buf = [0u8; 4096];
+                                // Reduced buffer to 1400 to fit in MTU
+                                let mut buf = [0u8; 1400];
                                 loop {
                                     match rd.read(&mut buf).await {
                                         Ok(0) => break, // EOF
@@ -94,8 +96,13 @@ impl ServerProxy {
                 });
             }
             FrameType::Data => {
-                let map = self.streams.lock().await;
-                if let Some(tx) = map.get(&frame.stream_id) {
+                // Clone sender and release lock before awaiting to prevent deadlock
+                let tx = {
+                    let map = self.streams.lock().await;
+                    map.get(&frame.stream_id).cloned()
+                };
+                
+                if let Some(tx) = tx {
                     let _ = tx.send(frame.payload).await;
                 }
             }

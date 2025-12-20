@@ -39,7 +39,8 @@ async fn main() -> Result<()> {
     router.update_latency("TCP", std::time::Duration::from_millis(100));
 
     // 3. Initialize Persistent Components (Proxy, SOCKS, System Config)
-    let (tunnel_tx, mut tunnel_rx) = mpsc::channel::<Frame>(1000);
+    // Increased global channel buffer to 50000 to prevent backpressure on heavy load
+    let (tunnel_tx, mut tunnel_rx) = mpsc::channel::<Frame>(50000);
     let proxy = Arc::new(ClientProxy::new(tunnel_tx));
 
     let socks_addr = "127.0.0.1:1080".parse()?;
@@ -86,14 +87,21 @@ async fn main() -> Result<()> {
             match transport.connect(addr).await {
                 Ok(raw_conn) => {
                     let mimic = Some(Box::new(chimera_core::mimic::HttpMimic) as Box<dyn chimera_core::mimic::Mimic>);
-                    match EncryptedConnection::new(raw_conn, false, mimic).await {
-                        Ok(conn) => {
+                    
+                    // Add 10-second timeout for client handshake
+                    let handshake_future = EncryptedConnection::new(raw_conn, false, mimic);
+                    match tokio::time::timeout(std::time::Duration::from_secs(10), handshake_future).await {
+                        Ok(Ok(conn)) => {
                             info!("Tunnel established via {}!", best_path_name);
                             router.update_latency(&best_path_name, std::time::Duration::from_millis(50));
                             break conn;
                         }
-                        Err(e) => {
+                        Ok(Err(e)) => {
                             warn!("Handshake failed: {}", e);
+                            router.report_failure(&best_path_name);
+                        }
+                        Err(_) => {
+                            warn!("Handshake timed out (10s)");
                             router.report_failure(&best_path_name);
                         }
                     }

@@ -21,18 +21,6 @@ impl EncryptedConnection {
         // 1. Generate ephemeral keypair
         let (my_private, my_public) = ChimeraCrypto::generate_ephemeral_key()?;
         
-        // ... (Handshake logic omitted for brevity, it's fine) ...
-        // Wait, I need to preserve the handshake logic!
-        // The tool requires precise replacement.
-        // I will copy the handshake logic from the previous file content view.
-        // Or I can replace just the struct and methods if I target correctly.
-        
-        // Actually, the handshake part is long. I should use `multi_replace` or just rewrite the whole file carefully.
-        // Let's stick to replacing methods since `new` is complex.
-        // But `new` needs to init `buffer`.
-        
-        // Let's reuse the existing `new` body but change the return struct.
-        
         let peer_public = if is_server {
             // Server waits for client's public key (possibly masqueraded)
             let received_data = inner.recv().await?.ok_or_else(|| anyhow!("Connection closed during handshake"))?;

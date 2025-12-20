@@ -110,7 +110,8 @@ use crate::protocol::Frame;
 use bytes::BytesMut;
 
 async fn handle_connection(conn: &mut dyn Connection) -> Result<()> {
-    let (tx, mut rx) = mpsc::channel::<Frame>(100);
+    // Increased buffer to 10000 to prevent backpressure
+    let (tx, mut rx) = mpsc::channel::<Frame>(10000);
     let proxy = Arc::new(ServerProxy::new(tx));
     
     let mut buf = BytesMut::with_capacity(4096);
